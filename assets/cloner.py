@@ -1,8 +1,10 @@
 import os
 from pyteal import *
 
+@Subroutine(TealType.none)
 def clone():
     # Txn.applications[0] is always reserved for the current app, so that's why we use [1]
+    Assert(Txn.sender == App.globalGet(Bytes("bank")))
     approval_prog = AppParam.approvalProgram(Txn.applications[1])
     clear_prog = AppParam.clearStateProgram(Txn.applications[1])
     global_byteslices_number = AppParam.globalNumByteSlice(Txn.applications[1])
@@ -19,14 +21,21 @@ def clone():
             TxnField.global_num_uints: global_uint_number.value(),
             # reference.py uses args[0] for setting the bank and args[1] for account_owner in global storage
             # in Txn.application_id() is the app id of the bank and in Txn.application_args[1] is the Txn.sender() that called the bank 
-            TxnField.application_args: [Txn.application_id(), Txn.application_args[1]],
+            TxnField.application_args: [Global.caller_app_id(), Txn.application_args[1]],
             TxnField.fee: Int(0) 
             }),
         InnerTxnBuilder.Submit()
     )
 
 def approval_program():
-    # this smart contract doesn't have any global or local storage 
+    # this smart contract has 2 global state variables: for creator (byte slice) and for the bank (uint)
+    # the original cloner will always have the admin's address as creator, only it should be used by the bank 
+    handle_setup = Seq(
+        App.globalPut(Bytes("creator"), Txn.sender()), # byte slice 
+        App.globalPut(Bytes("bank"), Txn.application_args[0]),# uint
+        Approve()
+    )
+    
     handle_noop = If(
             # the whole purpose of this smart contract is to be called from the bank and create a new bank account 
             # using the reference.py
@@ -36,7 +45,7 @@ def approval_program():
     )
 
     program = Cond(
-        [Txn.application_id() == Int(0), Approve()],
+        [Txn.application_id() == Int(0), handle_setup],
         [Txn.on_completion() == OnComplete.NoOp, handle_noop],
         [Txn.on_completion() == OnComplete.OptIn, Reject()],
         [Txn.on_completion() == OnComplete.CloseOut, Reject()],

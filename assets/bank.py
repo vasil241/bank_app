@@ -1,16 +1,13 @@
 import os
 from pyteal import *
 
-prefix = Bytes("base16", "151f7c75")
-open_acc_selector = MethodSignature("open_acc()void")
-
 @Subroutine(TealType.none)
 def open_acc():
     # user has to first opt into the bank smart contract before calling this method
     Assert(App.optedIn(Txn.sender()))
     # acc_check is used to check if the sender has already opened a bank account
     # if yes, then he can't open another one, if no - we can proceed with creating one
-    acc_check = App.localGetEx(Int(0), App.id(), Bytes("bank_account"))
+    acc_check = App.localGet(Txn.sender(), Bytes("bank_account"))
     If(
         acc_check.hasValue(),
         Seq(
@@ -21,24 +18,32 @@ def open_acc():
     min_deposit = Int(int(1e5)) # 0.1A - the min required deposit to open a bank account
     # in order to call correctly the open_acc() the user needs to send also a payment transaction
     # the fields of this transaction will be stored in deposit variable in order to check validity 
-    deposit = Gtxn[0]
-    deposit_check = And(
-        Global.group_size() == Int(1),
+    deposit, app_call = Gtxn[0], Gtxn[1]
+    check = And(
+        Global.group_size() == Int(2),
         deposit.type_enum() == TxnType.Payment,
         deposit.amount() >= min_deposit,
         deposit.receiver() == Global.current_application_address(),
-        deposit.close_remainder_to() == Global.zero_address()
+        deposit.close_remainder_to() == Global.zero_address(),
+        app_call.type_enum() == TxnType.ApplicationCall,
+        app_call.on_completion() == OnComplete.NoOp,
+        app_call.application_id() == Int(0),
+        # user has to pass in the foreign application array of app_call [app id cloner, app id reference] 
+        app_call.applications.length() == Int(2),
+        App.globalGetEx(app_call.applications[1], Bytes("creator")) == App.globalGet(Bytes("creator")),
+        App.globalGetEx(app_call.applications[2], Bytes("creator")) == App.globalGet(Bytes("creator"))
     )
-    Assert(deposit_check)
+    # check if the grouped transactions sent were truly valid and what this method needs
+    Assert(check)
     # create the new bank account that replicates the reference.py using the cloner.py to create it
     Seq(
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({
             TxnField.type_enum: TxnType.ApplicationCall,
-            TxnField.application_id: App.globalGet(Bytes("cloner")),
+            TxnField.application_id: app_call.applications[1], # giving the app id of the cloner
             TxnField.on_completion: OnComplete.NoOp,
             TxnField.application_args: [Bytes("clone"), Txn.sender()],
-            TxnField.applications: [App.globalGet(Bytes("reference"))],
+            TxnField.applications: [app_call.applications[2]], # giving the app id of the reference
             TxnField.fee: Int(0) 
         }),
         InnerTxnBuilder.Submit()
@@ -51,6 +56,8 @@ def open_acc():
     
     Seq(
         new_acc_id,
+        # increment the number of customers that have a bank account with the bank
+        App.globalPut(Bytes("counter"), App.globalGet(Bytes("counter")) + Int(1)),
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields(
             {
@@ -65,13 +72,18 @@ def open_acc():
     )
 
 def close_acc():
+    check = And(
+        Txn.applications.length() == Int(1),
+        Txn.applications[1] == App.localGet(Txn.sender(), Bytes("bank_account"))
+    )
+    Assert(check)
     Seq(
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({
             # before removing local state of the customer and leaving the bank, the bank account should be closed
             # and the funds should be returned to the customer's balance
             TxnField.type_enum: TxnType.ApplicationCall,
-            TxnField.application_id: App.localGet(Txn.sender(), Bytes("bank_account")),
+            TxnField.application_id: Txn.applications[1],
             TxnField.on_completion: OnComplete.DeleteApplication,
             TxnField.fee: Int(0)
         }),
@@ -81,23 +93,28 @@ def close_acc():
     
 def bank_approval():
     
-    # Define our abi methods, route based on method selector defined above
-    methods = [
+    handle_noop = [
         [
-            Txn.application_args[0] == open_acc_selector,
+            Txn.application_id() == Int(0), Return(handle_setup)
+        ],
+        [
+            Txn.application_args[0] == Bytes("open_acc"),
             Return(Seq(open_acc(), Approve()))
         ]
     ]
 
-    # this smart contract will store 4 global state vars: creator, reference.py, cloner.py and counter
-    # counter is just to show number of customers at any moment - can be good also for debuggin purposes
+    # this smart contract will store 2 global states: creator (byteslice) and counter (uint) to keep count of the clients
+    # and 1 local state: store bank_account app_id for each user (uint)
     handle_setup = Seq(
-        Approve()
-        # Finish this up
+        App.globalPut(Bytes("creator"), Txn.sender()), # byteslice
+        App.globalPut(Bytes("counter"), Int(0)), # uint
+        Approve()        
     )
 
     on_closeout = Seq(
         close_acc(),
+        # decrement the number of customers that have a bank account with the bank
+        App.globalPut(Bytes("counter"), App.globalGet(Bytes("counter")) - Int(1)),
         Approve()
     )
     
@@ -107,13 +124,16 @@ def bank_approval():
                     [Txn.on_completion() == OnComplete.UpdateApplication, Reject()],
                     [Txn.on_completion() == OnComplete.CloseOut, on_closeout],
                     [Txn.on_completion() == OnComplete.OptIn, Approve()],
-                    *methods,
+                    [Txn.on_completion() == OnComplete.NoOp, handle_noop]
                 )
+
     return compileTeal(program, Mode.Application, version=6)
 
 def bank_clear():
     program = Seq(
         close_acc(),
+        # decrement the number of customers that have a bank account with the bank
+        App.globalPut(Bytes("counter"), App.globalGet(Bytes("counter")) - Int(1)),
         Approve()
     )
     return compileTeal(program, mode=Mode.Application, version=6)

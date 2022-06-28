@@ -1,7 +1,19 @@
 import base64
 from algosdk.future.transaction import *
 
-def create_app(client, pk, approval_program, clear_program, global_schema, local_schema):
+def deploy(client, admin_pk, app_name, approval, clear, global_ints, global_bytes, local_ints, local_bytes, app_args):
+    # declare bank application state storage (immutable)
+    global_schema = StateSchema(global_ints, global_bytes)
+    local_schema = StateSchema(local_ints, local_bytes)
+
+    print("Deploying {} application...".format(app_name))
+    # Create bank
+    app_id = create_app(client, admin_pk, approval, clear, global_schema, local_schema, app_args)
+    app_addr = logic.get_application_address(app_id)
+    #Display results 
+    print("Created a {} application with id and addr: {} {}".format(app_name, app_id, app_addr))
+
+def create_app(client, pk, approval_program, clear_program, global_schema, local_schema, app_args):
     # get the address of the sender from its private key
     addr = account.address_from_private_key(pk)
     # get node suggested parameters
@@ -14,7 +26,7 @@ def create_app(client, pk, approval_program, clear_program, global_schema, local
     
     # Create the transaction
     # the 3rd argument represents OnComplete and 0 is for NoOp 
-    create_txn = ApplicationCreateTxn(addr, params, 0, appr_bytes, clear_bytes, global_schema, local_schema)
+    create_txn = ApplicationCreateTxn(addr, params, 0, appr_bytes, clear_bytes, global_schema, local_schema, app_args)
     # Sign it
     signed_txn = create_txn.sign(pk)
     # Ship it
@@ -29,7 +41,6 @@ def create_app(client, pk, approval_program, clear_program, global_schema, local
 
     app_id = result['application-index']
     return app_id
-
 
 def compile_program(client, source_code):
     compile_response = client.compile(source_code)

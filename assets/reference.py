@@ -5,13 +5,14 @@ from pyteal import *
 def approval_program():
 
     is_bank = Global.caller_app_id() == App.globalGet(Bytes("bank"))
-    is_account_owner = Txn.application_args[0] == App.globalGet(Bytes("account_owner"))
 
-    # this smart contract requires 1 global int and 1 global byte slice as state schema 
+    # this smart contract requires 1 global int and 2 global byte slice as state schema 
+    # the original reference will always have the admin's address as creator, all other bank accounts copy it
     handle_setup = Seq(
+        App.globalGet(Bytes("creator"), Txn.sender()), # byte slice 
         Assert(Txn.application_args.length() == Int(2)),
-        App.globalPut(Bytes("bank"), Txn.application_args[0]),
-        App.globalPut(Bytes("account_owner"), Txn.application_args[1]),
+        App.globalPut(Bytes("bank"), Txn.application_args[0]), # uint
+        App.globalPut(Bytes("account_owner"), Txn.application_args[1]), #  byte slice
         Approve()
     )
 
