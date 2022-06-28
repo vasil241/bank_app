@@ -1,28 +1,34 @@
 import os
 from pyteal import *
 
+# this smart contract actually represents the bank account
 def approval_program():
 
-    is_bank = Txn.sender() == App.globalGet(Bytes("bank"))
+    is_bank = Global.caller_app_id() == App.globalGet(Bytes("bank"))
     is_account_owner = Txn.application_args[0] == App.globalGet(Bytes("account_owner"))
 
+    # this smart contract requires 1 global int and 1 global byte slice as state schema 
     handle_setup = Seq(
-        App.globalPut(Bytes("bank"), Txn.sender()),
-        Assert(Txn.application_args.length() == Int(1)),
-        App.globalPut(Bytes("account_owner"), Txn.application_args[0]),
+        Assert(Txn.application_args.length() == Int(2)),
+        App.globalPut(Bytes("bank"), Txn.application_args[0]),
+        App.globalPut(Bytes("account_owner"), Txn.application_args[1]),
         Approve()
     )
 
-    handle_deleteapp = Seq(
-        If(
-            is_bank,
-            Seq(
-                # inner transaction to send all the funds to the account owner and then delete the app
-                # approve then
-            ),
-            Reject()
-        )
-    )
+    handle_deleteapp = If(
+                            is_bank,
+                            Seq(
+                                # send all the funds to the account owner and then delete the bank account
+                                InnerTxnBuilder.Begin(),
+                                InnerTxnBuilder.SetFields({
+                                    TxnField.type_enum: TxnType.Payment,
+                                    TxnField.close_remainder_to: App.globalGet(Bytes("account_owner"))
+                                }),
+                                InnerTxnBuilder.Submit(),
+                                Approve() # proceed with deletion of bank account
+                            ),
+                            Reject()
+                        )
 
     handle_noop = Approve()
 
