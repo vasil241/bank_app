@@ -215,6 +215,8 @@ def create(appr_prog, clear_prog, global_byteslice, global_uint):
     return Seq(
         # only the admin that created the bank can execute the logic inside this method
         Assert(Txn.sender() == Global.creator_address()),
+        Assert(Len(appr_prog)),
+        Assert(Len(clear_prog)),
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({
             TxnField.type_enum: TxnType.ApplicationCall,
@@ -254,8 +256,8 @@ def update(app_id, new_appr_prog, new_clear_prog):
         Assert(Txn.applications.length() == Int(1)),
         creator := AppParam.creator(app_id),
         Assert(Global.current_application_address() == creator.value()),
-        Assert(new_appr_prog),
-        Assert(new_clear_prog),
+        Assert(Len(new_appr_prog)),
+        Assert(Len(new_clear_prog)),
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({
             TxnField.type_enum: TxnType.ApplicationCall,

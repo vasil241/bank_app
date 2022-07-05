@@ -13,7 +13,6 @@ admin_addr, admin_pk = get_admin()[0], get_admin()[1]
 def demo():
     deploy(client, admin_pk, "bank", bank_approval, bank_clear, 1, 1, 1, 1)
     # bank to test id: 98125498 addr: H6YVO2QM4WMJF5SVCUC566VC4WIAPHBEX2SYB2RGQGA77STRIYXOWME47Q
-    
 
 if __name__ == "__main__":
     demo()
