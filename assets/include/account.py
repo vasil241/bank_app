@@ -1,4 +1,5 @@
 from algosdk import account, mnemonic
+from pyteal import *
 
 def generate_algorand_keypair():
     private_key, address = account.generate_account()
