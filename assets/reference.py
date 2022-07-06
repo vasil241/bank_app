@@ -80,6 +80,12 @@ def reference_approval():
         [Txn.application_args[0] == Bytes("transfer"), transfer()]
     )
 
+    handle_update = Seq(
+        # make sure the update call is coming from the bank associated with the bank account
+        Assert(Global.caller_app_address() == Global.creator_address()),
+        Approve()
+    )
+
     handle_deleteapp = If(
         # make sure the delete call is coming from the bank associated with the bank account
         Assert(Global.caller_app_address() == Global.creator_address()),
@@ -90,7 +96,7 @@ def reference_approval():
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields({
                 TxnField.type_enum: TxnType.Payment,
-                TxnField.amount: Int(int(1e4)),
+                TxnField.amount: Int(0),
                 TxnField.receiver: Txn.accounts[1], 
                 TxnField.close_remainder_to: Txn.accounts[1],
                 TxnField.note: Bytes("Return the remaining funds to the client and close bank account")
@@ -106,7 +112,7 @@ def reference_approval():
         [Txn.on_completion() == OnComplete.NoOp, handle_noop],
         [Txn.on_completion() == OnComplete.OptIn, Reject()],
         [Txn.on_completion() == OnComplete.CloseOut, Reject()],
-        [Txn.on_completion() == OnComplete.UpdateApplication, Reject()],
+        [Txn.on_completion() == OnComplete.UpdateApplication, handle_update],
         [Txn.on_completion() == OnComplete.DeleteApplication, handle_deleteapp]
     )
     return compileTeal(program, Mode.Application, version=6)

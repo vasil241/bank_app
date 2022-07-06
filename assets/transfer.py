@@ -41,12 +41,33 @@ def transfer():
 
 def transfer_approval():
 
+    handle_update = Seq(
+        # make sure the update call is coming from the bank associated with the bank account
+        Assert(Global.caller_app_address() == Global.creator_address()),
+        Approve()
+    )
+
+    handle_delete = Seq(
+        # make sure the delete call is coming from the bank associated with the bank account
+        Assert(Global.caller_app_address() == Global.creator_address()),
+        InnerTxnBuilder.Begin(),
+            InnerTxnBuilder.SetFields({
+                TxnField.type_enum: TxnType.Payment,
+                TxnField.amount: Int(0),
+                TxnField.receiver: Global.creator_address(), 
+                TxnField.close_remainder_to: Global.creator_address(),
+                TxnField.note: Bytes("Return the remaining funds from transfer contract to bank")
+            }),
+        InnerTxnBuilder.Submit(),
+        Approve()
+    )
+
     program = Cond(
         [Txn.application_id() == Int(0), Approve()],
         [Txn.on_completion() == OnComplete.OptIn, Reject()],
         [Txn.on_completion() == OnComplete.CloseOut, Reject()],
-        [Txn.on_completion() == OnComplete.UpdateApplication, Reject()],
-        [Txn.on_completion() == OnComplete.DeleteApplication, Reject()],
+        [Txn.on_completion() == OnComplete.UpdateApplication, handle_update],
+        [Txn.on_completion() == OnComplete.DeleteApplication, handle_delete],
         [Txn.on_completion() == OnComplete.NoOp, transfer()]
     )
 

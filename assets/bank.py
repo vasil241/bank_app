@@ -318,18 +318,43 @@ def bank_approval():
 
     on_closeout = Seq(
         # before closing the bank account, return the funds from it to the owner
+        Assert(Txn.applications.length() == Int(1)),
         close_acc(),
         # decrement the number of clients that have a bank account with the bank
         App.globalPut(Bytes("counter"), App.globalGet(Bytes("counter")) - Int(1)),
         Approve()
     )
+
+    handle_update = Seq(
+        # make sure the update call is coming from the admin who created the bank
+        Assert(Txn.sender() == Global.creator_address()),
+        Approve()
+    )
+
+    handle_delete = Seq(
+        # make sure the delete call is coming from the admin who created the bank
+        Assert(Txn.sender() == Global.creator_address()),
+        # make sure that the bank doesn't have any more clients left before deleting it
+        Assert(App.globalGet(Bytes("counter")) == Int(0)),
+        # return the remaining funds to the admin
+        InnerTxnBuilder.Begin(),
+            InnerTxnBuilder.SetFields({
+                TxnField.type_enum: TxnType.Payment,
+                TxnField.amount: Int(0),
+                TxnField.receiver: Global.creator_address(), 
+                TxnField.close_remainder_to: Global.creator_address(),
+                TxnField.note: Bytes("Return the remaining funds from the bank to the admin")
+            }),
+        InnerTxnBuilder.Submit(),
+        Approve()
+    )
     
     program = Cond(
                     [Txn.application_id() == Int(0), handle_setup],
-                    [Txn.on_completion() == OnComplete.DeleteApplication, Reject()],
-                    [Txn.on_completion() == OnComplete.UpdateApplication, Reject()],
-                    [Txn.on_completion() == OnComplete.CloseOut, on_closeout],
                     [Txn.on_completion() == OnComplete.OptIn, Approve()],
+                    [Txn.on_completion() == OnComplete.CloseOut, on_closeout],
+                    [Txn.on_completion() == OnComplete.UpdateApplication, handle_update],
+                    [Txn.on_completion() == OnComplete.DeleteApplication, handle_delete],
                     [Txn.on_completion() == OnComplete.NoOp, handle_noop]
                 )
 
@@ -337,6 +362,7 @@ def bank_approval():
 
 def bank_clear():
     program = Seq(
+        Assert(Txn.applications.length() == Int(1)),
         close_acc(),
         # decrement the number of clients that have a bank account with the bank
         App.globalPut(Bytes("counter"), App.globalGet(Bytes("counter")) - Int(1)),
