@@ -2,19 +2,19 @@ import os
 from pyteal import *
 
 def withdraw(): 
-    txn_check = And(
-        Txn.type_enum() == TxnType.ApplicationCall,
-        Txn.on_completion() == OnComplete.NoOp,
-        Txn.application_id() == Int(0),
-        Txn.applications.length() == Int(1),
-        Txn.application_args.length() == Int(1),
-        Txn.accounts.length() == Int(1)
+    txn_check = Seq(
+        Assert(Txn.type_enum() == TxnType.ApplicationCall),
+        Assert(Txn.on_completion() == OnComplete.NoOp),
+        Assert(Txn.application_id() == Global.current_application_id()),
+        Assert(Txn.applications.length() == Int(1)),
+        Assert(Txn.application_args.length() == Int(1)),
+        Assert(Txn.accounts.length() == Int(1))
     )
 
     return Seq( 
         # make sure that the caller of the withdraw contract is the bank and that the withdraw contract is also a child of bank
         Assert(Txn.sender() == Global.creator_address()),
-        Assert(txn_check),
+        txn_check,
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({
             TxnField.type_enum: TxnType.ApplicationCall,
@@ -26,7 +26,7 @@ def withdraw():
             # pass the sum that the client would like to withdraw and also which method in the bank account to activate
             TxnField.application_args: [Bytes("withdraw"), Txn.application_args[0]],
             TxnField.note: Bytes("Calling the bank account from which the withdrawal will be made from the withdraw smart contract"),
-            TxnField.fee: Int(0),
+            TxnField.fee: Int(0)
         }),
         InnerTxnBuilder.Submit(),
         Approve()
@@ -43,15 +43,6 @@ def withdraw_approval():
     handle_delete = Seq(
         # make sure the delete call is coming from the bank associated with the bank account
         Assert(Global.caller_app_address() == Global.creator_address()),
-        InnerTxnBuilder.Begin(),
-            InnerTxnBuilder.SetFields({
-                TxnField.type_enum: TxnType.Payment,
-                TxnField.amount: Int(0),
-                TxnField.receiver: Global.creator_address(), 
-                TxnField.close_remainder_to: Global.creator_address(),
-                TxnField.note: Bytes("Return the remaining funds from withdraw contract to bank")
-            }),
-        InnerTxnBuilder.Submit(),
         Approve()
     )
 

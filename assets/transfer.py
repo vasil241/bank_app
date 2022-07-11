@@ -2,25 +2,24 @@ import os
 from pyteal import *
 
 def transfer():
-    txn_check = And(
-        Txn.type_enum() == TxnType.ApplicationCall,
-        Txn.on_completion() == OnComplete.NoOp,
-        Txn.application_id() == Int(0),
+    txn_check = Seq(
+        Assert(Txn.type_enum() == TxnType.ApplicationCall),
+        Assert(Txn.on_completion() == OnComplete.NoOp),
+        Assert(Txn.application_id() == Global.current_application_id()),
         # client has to pass applications[his own bank acc, foreign bank to transfer to]
-        # accounts[receiver public addr, receiver bank account address]
+        # accounts[receiver bank addr, receiver public addr, receiver bank account address]
         # args[the sum to be transfered]
-        Txn.applications.length() == Int(2),
-        Txn.accounts.length() == Int(2),
-        Txn.application_args.length() == Int(1)
+        Assert(Txn.applications.length() == Int(2)),
+        Assert(Txn.accounts.length() == Int(3)),
+        Assert(Txn.application_args.length() == Int(1))
     ) 
     
     return Seq(
-        Assert(txn_check),
+        txn_check,
         # to make sure the client is making a transfer from his own bank account
-        Assert(Txn.sender() == App.globalGetEx(Txn.applications[1], Bytes("account_owner"))),
-        # make sure that the transfer is not from a bank account to the same bank account - not allowed
-        addr := AppParam.address(Txn.applications[1]),
-        Assert(Txn.accounts[2] != addr.value()),
+        acc_owner := App.globalGetEx(Txn.applications[1], Bytes("account_owner")),
+        Assert(acc_owner.hasValue()),
+        Assert(Txn.sender() == acc_owner.value()),
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({
             TxnField.type_enum: TxnType.ApplicationCall,
@@ -29,8 +28,9 @@ def transfer():
             TxnField.application_id: Txn.applications[1],
             # giving the bank to which the recipient's bank account belongs
             TxnField.applications: [Txn.applications[2]],
-            # giving the public address of the client and his bank account that will receive funds
-            TxnField.accounts: [Txn.accounts[1], Txn.accounts[2]],
+            # giving the bank addr, public address of the client and his bank account addr that will receive funds
+            TxnField.accounts: [Txn.accounts[1], Txn.accounts[2], Txn.accounts[3]],
+            # giving which method to call and the sum to be transferred
             TxnField.application_args: [Bytes("transfer"), Txn.application_args[0]],
             TxnField.note: Bytes("Calling the bank account from which funds will be transferred from the transfer smart contract"),
             TxnField.fee: Int(0)
@@ -50,15 +50,6 @@ def transfer_approval():
     handle_delete = Seq(
         # make sure the delete call is coming from the bank associated with the bank account
         Assert(Global.caller_app_address() == Global.creator_address()),
-        InnerTxnBuilder.Begin(),
-            InnerTxnBuilder.SetFields({
-                TxnField.type_enum: TxnType.Payment,
-                TxnField.amount: Int(0),
-                TxnField.receiver: Global.creator_address(), 
-                TxnField.close_remainder_to: Global.creator_address(),
-                TxnField.note: Bytes("Return the remaining funds from transfer contract to bank")
-            }),
-        InnerTxnBuilder.Submit(),
         Approve()
     )
 

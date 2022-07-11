@@ -10,7 +10,7 @@ def generate_algorand_keypair():
 
 def get_admin():
     #first string is the address of the admin, second is his private key
-    return ["FQ6VLZAUMQA64PRTQVKXJWMK6TUMEY5DBFHR2VOT3MUUSMBGKJHGO66I74","N48DIZPgRk0qreiuqxZ4iuZT27GMMVLfc6q/U41IZ1YsPVXkFGQB7j4zhVV02Yr06MJjowlPHVXT2ylJMCZSTg=="]
+    return ["HWG6FGRTDNTNY2VWH6USMJUCCFILD4WX5Q66VDZK6YU3MIOJIVP2QN7ZEM","4N9bHtSaXk5fPHcqX9t+HUcof17NVCubMRlmyX2HyQA9jeKaMxtm3Gq2P6kmJoIRULHy1+w96o8q9im2IclFXw=="]
 
 def get_clientA():
     return ["4RHDETQC4KDHMUQ22QLEX7B6FY2TSNHZO6XVYASAE23WLU7POKTP3NZ6G4", "NzdILYFcxenkVvj2I8WReP4JVTnTBejxAw7n8vBXjdzkTjJOAuKGdlIa1BZL/D4uNTk0+XevXAJAJrdl0+9ypg=="]
@@ -22,9 +22,9 @@ def get_clientB():
 # generate_algorand_keypair()
 
 # Admin
-# My address: FQ6VLZAUMQA64PRTQVKXJWMK6TUMEY5DBFHR2VOT3MUUSMBGKJHGO66I74
-# My private key: N48DIZPgRk0qreiuqxZ4iuZT27GMMVLfc6q/U41IZ1YsPVXkFGQB7j4zhVV02Yr06MJjowlPHVXT2ylJMCZSTg==
-# My passphrase: tragic athlete mountain ankle miss nation harsh trim into follow despair hamster pond item grain cover tumble sorry steel desk boy split rebel able item
+# My address: HWG6FGRTDNTNY2VWH6USMJUCCFILD4WX5Q66VDZK6YU3MIOJIVP2QN7ZEM
+# My private key: 4N9bHtSaXk5fPHcqX9t+HUcof17NVCubMRlmyX2HyQA9jeKaMxtm3Gq2P6kmJoIRULHy1+w96o8q9im2IclFXw==
+# My passphrase: winter hunt august pull rule squeeze title jaguar torch hope satoshi impact explain panther helmet feel grace shoe arrive nose wine gift alien abandon arena
 
 # Client A
 # My address: 4RHDETQC4KDHMUQ22QLEX7B6FY2TSNHZO6XVYASAE23WLU7POKTP3NZ6G4
