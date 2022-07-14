@@ -31,7 +31,7 @@ class Client:
         sender_addr = self.get_addr() 
         sender_pk = self.get_pk()
         sender_note = "{} wants to be a client of bank {}".format(self.name, bank.get_name())
-        print(sender_note)
+        print("\n" + sender_note)
         val = bank.client_registration(sender_addr, sender_pk, sender_note)
         if val:
             self.bank = bank
@@ -45,7 +45,7 @@ class Client:
         sender_pk = self.get_pk()
         sender_acc_id = self.get_bank_acccount_id()
         sender_note = "{} wants to close his account and leave the bank {}".format(self.name, self.bank.get_name())
-        print(sender_note)
+        print("\n" + sender_note)
         val = self.bank.close_account(sender_addr, sender_pk, sender_acc_id, sender_note)
         if val:
             print("Successfully closed the bank account, {} is no longer a client of {}".format(self.name, self.bank.get_name()))
@@ -59,7 +59,7 @@ class Client:
         sender_addr = self.get_addr()
         sender_pk = self.get_pk()
         sender_note = "{} wishes to open a bank account with {}".format(self.name, self.bank.get_name())
-        print(sender_note)
+        print("\n" + sender_note)
         l = self.bank.new_account(sender_addr, sender_pk, initial_deposit, sender_note)
         if l:
             print("A new bank account with id {} and address {} was created for the client {}".format(
@@ -74,7 +74,7 @@ class Client:
         sender_pk = self.get_pk()
         sender_acc_addr = self.get_bank_account_addr()
         sender_note = "Client {} wishes to deposit {} micro Algos to his bank account".format(self.name, amount)
-        print(sender_note)
+        print("\n" + sender_note)
         val = self.bank.deposit_method(sender_addr, sender_pk, sender_acc_addr, amount, sender_note)
         if val:
             print("Deposit was successful!")
@@ -86,7 +86,7 @@ class Client:
         sender_pk = self.get_pk()
         sender_acc_id = self.get_bank_acccount_id()
         sender_note = "Client {} wishes to withdraw {} micro Algos from his bank account".format(self.name, amount)
-        print(sender_note)
+        print("\n" + sender_note)
         val = self.bank.withdraw_method(sender_addr, sender_pk, sender_acc_id, amount, sender_note)
         if val:
             print("Withdrawal was successful!")
@@ -99,7 +99,7 @@ class Client:
         sender_pk = self.get_pk()
         sender_acc_id = self.get_bank_acccount_id()
         sender_note = "{} wishes to make a transfer to {}".format(self.name, receiver.get_name())
-        print(sender_note)
+        print("\n" + sender_note)
         val = self.bank.transfer_method(sender_addr, sender_pk, sender_acc_id, receiver, amount, sender_note)
         if val:
             print("Transfer was successful")

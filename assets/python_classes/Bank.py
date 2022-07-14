@@ -40,7 +40,7 @@ class Bank:
         
     def deposit_method(self, sender_addr, sender_pk, sender_acc_addr, amount, sender_note):
         if self.deposit == None:
-            print("Bank doesn't have a deposit functionality")
+            print("\nBank doesn't have a deposit functionality")
             return 0
         return self.transactions.group_txns(
             sender_addr, sender_pk, self.bank_id, self.bank_addr, amount, sender_note, app_args=["deposit"], foreign_apps=[self.deposit[0]], foreign_accs=[self.deposit[1], sender_acc_addr]
@@ -48,7 +48,7 @@ class Bank:
 
     def withdraw_method(self, sender_addr, sender_pk, sender_acc_id, amount, sender_note):
         if self.withdraw == None:
-            print("Bank doesn't have a withdraw functionality")
+            print("\nBank doesn't have a withdraw functionality")
             return 0
         return self.transactions.call_app(
             sender_addr, sender_pk, 0, self.bank_id, sender_note, app_args=["withdraw", amount], foreign_apps=[self.withdraw[0], sender_acc_id]
@@ -56,7 +56,7 @@ class Bank:
 
     def transfer_method(self, sender_addr, sender_pk, sender_acc_id, receiver, amount, sender_note):
         if self.transfer == None:
-            print("Bank doesn't have a transfer functionality")
+            print("\nBank doesn't have a transfer functionality")
             return 0
         receiver_addr = receiver.get_addr()
         receiver_acc_addr = receiver.get_bank_account_addr()
@@ -78,7 +78,7 @@ class Bank:
             appr_bytes = self.transactions.compile_program(deposit_approval())
             clear_bytes = self.transactions.compile_program(deposit_clear())
             note = "Bank {} creates the deposit functionality".format(self.name)
-            print(note)
+            print("\n" + note)
             l = self.transactions.call_app(
                 self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["create", appr_bytes, clear_bytes, 0, 0]
             )
@@ -91,7 +91,7 @@ class Bank:
             appr_bytes = self.transactions.compile_program(withdraw_approval())
             clear_bytes = self.transactions.compile_program(withdraw_clear())
             note = "Bank {} creates the withdraw functionality".format(self.name)
-            print(note)
+            print("\n" + note)
             l = self.transactions.call_app(
                 self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["create", appr_bytes, clear_bytes, 0, 0]
             )
@@ -104,7 +104,7 @@ class Bank:
             appr_bytes = self.transactions.compile_program(transfer_approval())
             clear_bytes = self.transactions.compile_program(transfer_clear())
             note = "Bank {} creates the transfer functionality".format(self.name)
-            print(note)
+            print("\n" + note)
             l = self.transactions.call_app(
                 self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["create", appr_bytes, clear_bytes, 0, 0]
             )
@@ -117,7 +117,7 @@ class Bank:
             appr_bytes = self.transactions.compile_program(reference_approval())
             clear_bytes = self.transactions.compile_program(reference_clear())
             note = "Bank {} creates the bank account reference functionality".format(self.name)
-            print(note)
+            print("\n" + note)
             l = self.transactions.call_app(
                 self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["create", appr_bytes, clear_bytes, 2, 0]
             )
@@ -136,7 +136,7 @@ class Bank:
             appr_bytes = self.transactions.compile_program(deposit_approval())
             clear_bytes = self.transactions.compile_program(deposit_clear())
             note = "Bank {} updates the deposit functionality".format(self.name)
-            print(note)
+            print("\n" + note)
             val = self.transactions.call_app(
                 self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["update", appr_bytes, clear_bytes], foreign_apps=[deposit_id]
             )
@@ -149,7 +149,7 @@ class Bank:
             appr_bytes = self.transactions.compile_program(withdraw_approval())
             clear_bytes = self.transactions.compile_program(withdraw_clear())
             note = "Bank {} updates the withdraw functionality".format(self.name)
-            print(note)
+            print("\n" + note)
             val = self.transactions.call_app(
                 self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["update", appr_bytes, clear_bytes], foreign_apps=[withdraw_id]
             )
@@ -162,7 +162,7 @@ class Bank:
             appr_bytes = self.transactions.compile_program(transfer_approval())
             clear_bytes = self.transactions.compile_program(transfer_clear())
             note = "Bank {} updates the transfer functionality".format(self.name)
-            print(note)
+            print("\n" + note)
             val = self.transactions.call_app(
                 self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["update", appr_bytes, clear_bytes], foreign_apps=[transfer_id]
             )
@@ -175,7 +175,7 @@ class Bank:
             appr_bytes = self.transactions.compile_program(reference_approval())
             clear_bytes = self.transactions.compile_program(reference_clear())
             note = "Bank {} updates the bank account reference functionality".format(self.name)
-            print(note)
+            print("\n" + note)
             val = self.transactions.call_app(
                 self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["update", appr_bytes, clear_bytes], foreign_apps=[reference_id]
             )
@@ -190,7 +190,7 @@ class Bank:
         if functionality == "deposit":
             deposit_id = self.deposit[0]
             note = "Bank {} deletes the deposit functionality".format(self.name)
-            print(note)
+            print("\n" + note)
             val = self.transactions.call_app(
                 self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["destroy"], foreign_apps=[deposit_id]
             )
@@ -202,7 +202,7 @@ class Bank:
         elif functionality == "withdraw":
             withdraw_id = self.withdraw[0]
             note = "Bank {} deletes the withdraw functionality".format(self.name)
-            print(note)
+            print("\n" + note)
             val = self.transactions.call_app(
                 self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["destroy"], foreign_apps=[withdraw_id]
             )
@@ -214,7 +214,7 @@ class Bank:
         elif functionality == "transfer":
             transfer_id = self.transfer[0]
             note = "Bank {} deletes the transfer functionality".format(self.name)
-            print(note)
+            print("\n" + note)
             val = self.transactions.call_app(
                 self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["destroy"], foreign_apps=[transfer_id]
             )
@@ -226,7 +226,7 @@ class Bank:
         elif functionality == "reference":
             reference_id = self.bank_account_reference[0]
             note = "Bank {} deletes the bank account reference functionality".format(self.name)
-            print(note)
+            print("\n" + note)
             val = self.transactions.call_app(
                 self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["destroy"], foreign_apps=[reference_id]
             )

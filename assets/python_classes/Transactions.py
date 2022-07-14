@@ -96,11 +96,13 @@ class Transactions:
             of a newly created functionality or bank account. Sometimes it is going to be just a transaction for a delete, 
             update, optin operation where no app id is required, but just a 1 (True)
             '''
-            #d = result['inner-txns'][0]
-            if 'application-index' in result['inner-txns'][0]:
-                id = result['inner-txns'][0]['application-index']
-                addr = logic.get_application_address(id)
-                return [id, addr]
+            if 'inner-txns' in result:
+                if 'application-index' in result['inner-txns'][0]:
+                    id = result['inner-txns'][0]['application-index']
+                    addr = logic.get_application_address(id)
+                    return [id, addr]
+                else: 
+                    return 1 
             else:
                 return 1
 
@@ -130,14 +132,16 @@ class Transactions:
             print("TXID 1: ", result.tx_ids[0])
             print("TXID 2: " ,result.tx_ids[-1])
 
-            d = txn2_result['inner-txns'][0]
-            if 'application-index' in d:
-                id = d['application-index']
-                addr = logic.get_application_address(id)
-                return [id, addr]
+            if 'inner-txns' in txn2_result:
+                if 'application-index' in txn2_result['inner-txns'][0]:
+                    id = txn2_result['inner-txns'][0]['application-index']
+                    addr = logic.get_application_address(id)
+                    return [id, addr]
+                else: 
+                    return 1 
             else:
                 return 1
-        
+
         except Exception as err:
             print(err)
             return 0
