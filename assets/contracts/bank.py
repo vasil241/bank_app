@@ -92,7 +92,7 @@ def withdraw():
             # making the call to the withdraw contract
             TxnField.application_id: Txn.applications[1],
             # passing the referenced bank account in the application array
-            TxnField.applications: [Txn.applications[2]],
+            TxnField.applications: [Txn.applications[1], Txn.applications[2]],
             TxnField.accounts: [Txn.sender()],
             # passing the sum to be withdrawn
             TxnField.application_args: [Txn.application_args[1]],
@@ -148,8 +148,8 @@ def deposit():
         Assert(app_call.type_enum() == TxnType.ApplicationCall),
         Assert(app_call.on_completion() == OnComplete.NoOp),
         Assert(app_call.application_id() == Global.current_application_id()),
-        # client should reference in the applications[deposit contract app id, app id of his bank account]  
-        Assert(app_call.applications.length() == Int(2)),
+        # client should reference in the applications[deposit contract app id]  
+        Assert(app_call.applications.length() == Int(1)),
         # client should reference deposit contract address and bank account address
         Assert(app_call.accounts.length() == Int(2)),
         # args["deposit"] to trigger this method when calling the bank
@@ -162,7 +162,7 @@ def deposit():
         creator := AppParam.creator(Txn.applications[1]),
         Assert(Global.current_application_address() == creator.value()),
         # the bank account referenced should be connected to this bank and the client
-        Assert(app_call.applications[2] == App.localGet(Txn.sender(), Bytes("bank_account_id"))),
+        Assert(app_call.accounts[2] == App.localGet(Txn.sender(), Bytes("bank_account_addr"))),
         # send a group of 2 inner transactions to the deposit smart contract 
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({
@@ -177,8 +177,7 @@ def deposit():
             TxnField.type_enum: TxnType.ApplicationCall,
             TxnField.application_id: app_call.applications[1],
             TxnField.on_completion: OnComplete.NoOp,
-            # reference the bank account id and address of the client that wishes to make a deposit
-            TxnField.applications: [app_call.applications[2]],
+            # reference the bank account address of the client that wishes to make a deposit
             TxnField.accounts: [Txn.accounts[2]],
             TxnField.note: Bytes("Bank calls the deposit smart contract"),
             TxnField.fee: Int(0)
@@ -210,7 +209,6 @@ def close_acc():
     )
 
 def create(appr_prog, clear_prog, global_byteslice, global_uint):
-    # the smart contracts that are children of the bank don't need funds to be operational
     return Seq(
         # only the admin that created the bank can execute the logic inside this method
         Assert(Txn.sender() == Global.creator_address()),
@@ -226,7 +224,18 @@ def create(appr_prog, clear_prog, global_byteslice, global_uint):
             TxnField.global_num_uints: Btoi(global_uint),
             # this field is only because of the reference contract requirement in setup
             TxnField.accounts: [Txn.sender()],
-            TxnField.note: Bytes("Bank deploys a new child (additional smart contract)"),
+            TxnField.note: Bytes("Bank deploys a new child/functionality (additional smart contract)"),
+        }),
+        InnerTxnBuilder.Submit(),
+        child_addr := AppParam.address(InnerTxn.created_application_id()),
+        Assert(child_addr.hasValue()),
+        # fund the newly created child smart contract with funds from the bank 
+        InnerTxnBuilder.Begin(),
+        InnerTxnBuilder.SetFields({
+            TxnField.type_enum: TxnType.Payment,
+            TxnField.amount: Int(100000), # 0.1 Algo is more than enough
+            TxnField.receiver: child_addr.value(),
+            TxnField.note: Bytes("Fund the newly created child smart contract / additional functionality"),
         }),
         InnerTxnBuilder.Submit(),
         App.globalPut(Bytes("children"), App.globalGet(Bytes("children")) + Int(1)),
@@ -261,7 +270,7 @@ def destroy(app_id):
     return Seq(
         Assert(Txn.sender() == Global.creator_address()),
         Assert(Txn.applications.length() == Int(1)),
-        creator := AppParam.creator(app_id),
+        creator := AppParam.creator(Txn.applications[1]),
         Assert(Global.current_application_address() == creator.value()),
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({
@@ -304,7 +313,6 @@ def bank_approval():
 
     on_closeout = Seq(
         # before closing the bank account, return the funds from it to the owner
-        Assert(Txn.applications.length() == Int(1)),
         close_acc(),
         # decrement the number of clients that have a bank account with the bank
         App.globalPut(Bytes("clients"), App.globalGet(Bytes("clients")) - Int(1)),

@@ -6,14 +6,14 @@ from pyteal import *
 def withdraw():
     return Seq(
         # to make sure that the withdraw contract that called this method is child of bank (parent)
-        creator := AppParam.creator(Global.caller_app_id()),
+        creator := AppParam.creator(Txn.applications[1]),
         Assert(creator.value() == Global.creator_address()),
         Assert(Txn.accounts[1] == App.globalGet(Bytes("account_owner"))),
         Assert(Btoi(Txn.application_args[1]) <= (Balance(Global.current_application_address()) - MinBalance(Global.current_application_address()))),
         InnerTxnBuilder.Begin(),
         InnerTxnBuilder.SetFields({
             TxnField.type_enum: TxnType.Payment,
-            TxnField.amount: Btoi(Txn.application_args[0]),
+            TxnField.amount: Btoi(Txn.application_args[1]),
             TxnField.receiver: Txn.accounts[1],
             TxnField.note: Bytes("The client successfully withdrew funds from his bank account"),
             TxnField.fee: Int(0)
@@ -27,14 +27,14 @@ def transfer():
         Assert(Txn.type_enum() == TxnType.ApplicationCall),
         Assert(Txn.on_completion() == OnComplete.NoOp),
         Assert(Txn.application_id() == Global.current_application_id()),
-        Assert(Txn.applications.length() == Int(1)),
+        Assert(Txn.applications.length() == Int(2)),
         Assert(Txn.accounts.length() == Int(3)),
         Assert(Txn.application_args.length() == Int(2))
     )
 
     return Seq(
         # to make sure that the transfer contract that called this method is child of bank (parent)
-        creator := AppParam.creator(Global.caller_app_id()),
+        creator := AppParam.creator(Txn.applications[1]),
         Assert(creator.value() == Global.creator_address()),
         txn_check,
         # make sure that the bank account isn't sending money to itself - not allowed
@@ -53,7 +53,7 @@ def transfer():
         InnerTxnBuilder.SetFields({
             TxnField.type_enum: TxnType.ApplicationCall,
             TxnField.on_completion: OnComplete.NoOp,
-            TxnField.application_id: Txn.applications[1],
+            TxnField.application_id: Txn.applications[2],
             TxnField.accounts: [Txn.accounts[2], Txn.accounts[3]],
             TxnField.application_args: [Bytes("transfer")],
             TxnField.note: Bytes("Sending the transfer to the bank for processing"),

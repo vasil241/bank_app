@@ -6,10 +6,10 @@ def transfer():
         Assert(Txn.type_enum() == TxnType.ApplicationCall),
         Assert(Txn.on_completion() == OnComplete.NoOp),
         Assert(Txn.application_id() == Global.current_application_id()),
-        # client has to pass applications[his own bank acc, foreign bank to transfer to]
+        # client has to pass applications[transfer contract id, his own bank acc, foreign bank to transfer to]
         # accounts[receiver bank addr, receiver public addr, receiver bank account address]
         # args[the sum to be transfered]
-        Assert(Txn.applications.length() == Int(2)),
+        Assert(Txn.applications.length() == Int(3)),
         Assert(Txn.accounts.length() == Int(3)),
         Assert(Txn.application_args.length() == Int(1))
     ) 
@@ -17,7 +17,7 @@ def transfer():
     return Seq(
         txn_check,
         # to make sure the client is making a transfer from his own bank account
-        acc_owner := App.globalGetEx(Txn.applications[1], Bytes("account_owner")),
+        acc_owner := App.globalGetEx(Txn.applications[2], Bytes("account_owner")),
         Assert(acc_owner.hasValue()),
         Assert(Txn.sender() == acc_owner.value()),
         InnerTxnBuilder.Begin(),
@@ -25,9 +25,9 @@ def transfer():
             TxnField.type_enum: TxnType.ApplicationCall,
             TxnField.on_completion: OnComplete.NoOp,
             # app call to the bank account
-            TxnField.application_id: Txn.applications[1],
+            TxnField.application_id: Txn.applications[2],
             # giving the bank to which the recipient's bank account belongs
-            TxnField.applications: [Txn.applications[2]],
+            TxnField.applications: [Txn.applications[1], Txn.applications[3]],
             # giving the bank addr, public address of the client and his bank account addr that will receive funds
             TxnField.accounts: [Txn.accounts[1], Txn.accounts[2], Txn.accounts[3]],
             # giving which method to call and the sum to be transferred
@@ -50,6 +50,17 @@ def transfer_approval():
     handle_delete = Seq(
         # make sure the delete call is coming from the bank associated with the bank account
         Assert(Global.caller_app_address() == Global.creator_address()),
+        # return the 0.1 Algo to the bank from the child
+        InnerTxnBuilder.Begin(),
+        InnerTxnBuilder.SetFields({
+            TxnField.type_enum: TxnType.Payment,
+            TxnField.amount: Int(0),
+            TxnField.receiver: Txn.sender(),
+            TxnField.close_remainder_to: Txn.sender(),
+            TxnField.note: Bytes("Returning the funds of the child to the bank"),
+            TxnField.fee: Int(0)
+        }),
+        InnerTxnBuilder.Submit(),
         Approve()
     )
 

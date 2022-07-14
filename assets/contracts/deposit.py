@@ -12,8 +12,7 @@ def deposit():
         Assert(deposit_call.type_enum() == TxnType.ApplicationCall),
         Assert(deposit_call.on_completion() == OnComplete.NoOp),
         Assert(deposit_call.application_id() == Global.current_application_id()),
-        # bank should have referenced the bank account id and address to which the deposit should go 
-        Assert(deposit_call.applications.length() == Int(1)),
+        # bank should have referenced the bank account address to which the deposit should go 
         Assert(deposit_call.accounts.length() == Int(1))
     )
 
@@ -49,6 +48,17 @@ def deposit_approval():
     handle_delete = Seq(
         # make sure the delete call is coming from the bank associated with the bank account
         Assert(Global.caller_app_address() == Global.creator_address()),
+        # return the 0.1 Algo to the bank from the child
+        InnerTxnBuilder.Begin(),
+        InnerTxnBuilder.SetFields({
+            TxnField.type_enum: TxnType.Payment,
+            TxnField.amount: Int(0),
+            TxnField.receiver: Txn.sender(),
+            TxnField.close_remainder_to: Txn.sender(),
+            TxnField.note: Bytes("Returning the funds of the child to the bank"),
+            TxnField.fee: Int(0)
+        }),
+        InnerTxnBuilder.Submit(),
         Approve()
     )
 
