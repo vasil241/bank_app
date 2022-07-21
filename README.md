@@ -16,6 +16,32 @@ source ./venv/bin/activate # Linux
 7. Go to the folder where you installed sandbox and run `./sandbox up testnet` - this will take a while probably
 8. You should be ready to go and run the app, if you are lost, [this video](https://www.youtube.com/watch?v=V3d3VTlgMo8&list=PLpAdAjL5F75CNnmGbz9Dm_k-z5I6Sv9_x) could help 
 
+### INSTALLATION AND GENERATE UML DIAGRAMS 
+
+Please type the following command to get module compilation result.
+
+```bash
+python -v -m demo.py
+```
+
+Install the following linter 
+
+```bash
+pip install pylint
+```
+
+To publish the UML diagram, please type as below: 
+
+```bash
+pyreverse -o png -p SAMPLEOUTPUT .
+```
+
+To install all packages: 
+
+```bash
+pip install -r requirements.txt
+```
+
 ## Just run it! 
 Now that you have set up the required environment and cloned the project, you can explore the different folders and contents :) 
 All of the app's logic is in the `assets` folder. There you can find all of the classes in `python_classes` and all of the smart contracts in `contracts`. 
