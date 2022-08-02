@@ -13,12 +13,12 @@ class Transactions:
         global_schema = StateSchema(global_ints, global_bytes)
         local_schema = StateSchema(local_ints, local_bytes)
 
-        print("Deploying {} application...".format(app_name))
+        print("Creating the bank {}...".format(app_name))
         # Create bank
         app_id = self.create_app(creator_pk, approval, clear, global_schema, local_schema)
         app_addr = logic.get_application_address(app_id)
         #Display results 
-        print("Created the bank {} with id and addr: {} {}".format(app_name, app_id, app_addr))
+        print("Created the bank {} with id {} and address {}".format(app_name, app_id, app_addr))
         return [app_id, app_addr]
 
     def create_app(self, creator_pk, approval_program, clear_program, global_schema, local_schema):
@@ -48,7 +48,8 @@ class Transactions:
 
         except Exception as err:
             print(err)
-            return
+        
+        return 0
 
     def payment_txn(self, sender_addr, sender_pk, amount, receiver, note):
         params = self.client.suggested_params()
@@ -63,7 +64,8 @@ class Transactions:
 
         except Exception as err:
             print(err)
-            return 0
+        
+        return 0
 
     def call_app(self, sender_addr, sender_pk, on_complete, app_id, note="", appr_prog="", clear_prog="", app_args=[], foreign_apps=[], foreign_accs=[], fee=1000):
         # get node suggested parameters
@@ -86,7 +88,6 @@ class Transactions:
         tx_id = signed_txn.transaction.get_txid()
         # send transaction
         self.client.send_transactions([signed_txn])
-        print("Sending an application call to {}".format(app_id))
         
         try:
             result = wait_for_confirmation(self.client, tx_id, 5)
@@ -108,7 +109,8 @@ class Transactions:
 
         except Exception as err:
             print(err)
-            return 0
+        
+        return 0    
 
 
     def group_txns(self, sender_addr, sender_pk, receiver_id, receiver_addr, amount, note1="", note2="", app_args=[], foreign_apps=[], foreign_accs=[], fee=1000):
@@ -144,7 +146,8 @@ class Transactions:
 
         except Exception as err:
             print(err)
-            return 0
+        
+        return 0
         
 
     def compile_program(self, source_code):

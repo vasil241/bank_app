@@ -2,7 +2,6 @@ import os
 from pyteal import *
 
 # every bank account uses this smart contract as reference
-
 def withdraw():
     return Seq(
         # to make sure that the withdraw contract that called this method is child of bank (parent)

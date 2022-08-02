@@ -1,8 +1,5 @@
 from .Transactions import *
-from contracts.deposit import deposit_approval, deposit_clear
-from contracts.withdraw import withdraw_approval, withdraw_clear
-from contracts.transfer import transfer_approval, transfer_clear
-from contracts.reference import reference_approval, reference_clear
+from contracts import *
 
 # bank objects get created only by an Investor inside his create_bank method
 class Bank:
@@ -20,7 +17,7 @@ class Bank:
         self.deposit = None
         self.withdraw = None
         self.transfer = None
-        self.bank_account_reference = None
+        self.reference = None
 
     def get_name(self):
         return self.name
@@ -33,8 +30,11 @@ class Bank:
     
     def new_account(self, sender_addr, sender_pk, initial_deposit, sender_note):
         # should return the id and addr of the newly created bank account
+        if self.reference == None:
+            print("Reference contract is still not created, can't create a bank account!")
+            return False
         l = self.transactions.group_txns(
-            sender_addr, sender_pk, self.bank_id, self.bank_addr, initial_deposit, sender_note, app_args=["open_acc"], foreign_apps=[self.bank_account_reference[0]]
+            sender_addr, sender_pk, self.bank_id, self.bank_addr, initial_deposit, sender_note, app_args=["open_acc"], foreign_apps=[self.reference[0]]
             )
         return l
         
@@ -58,7 +58,7 @@ class Bank:
         if self.transfer == None:
             print("\nBank doesn't have a transfer functionality")
             return 0
-        receiver_addr = receiver.get_addr()
+        receiver_addr = receiver.get_account_address() 
         receiver_acc_addr = receiver.get_bank_account_addr()
         receiver_bank_id = receiver.get_bank().get_bank_id()
         receiver_bank_addr = receiver.get_bank().get_bank_addr()
@@ -75,66 +75,93 @@ class Bank:
 
     def create(self, functionality):
         if functionality == "deposit":
-            appr_bytes = self.transactions.compile_program(deposit_approval())
-            clear_bytes = self.transactions.compile_program(deposit_clear())
-            note = "Bank {} creates the deposit functionality".format(self.name)
-            print("\n" + note)
-            l = self.transactions.call_app(
-                self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["create", appr_bytes, clear_bytes, 0, 0]
-            )
-            if l:
-                print("Deposit contract created successfully with id {} and addr {}".format(l[0], l[1]))
-                self.deposit = l
-            else: 
-                print("Creation of the deposit contract failed!")
+            if self.deposit == None:
+                appr_bytes = self.transactions.compile_program(deposit_approval())
+                clear_bytes = self.transactions.compile_program(deposit_clear())
+                note = "Bank {} creates the deposit functionality".format(self.name)
+                print("\n" + note)
+                l = self.transactions.call_app(
+                    self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["create", appr_bytes, clear_bytes, 0, 0]
+                )
+                if l:
+                    print("Deposit contract created successfully with id {} and addr {}".format(l[0], l[1]))
+                    self.deposit = l
+                    return True
+                else: 
+                    print("Creation of the deposit contract failed!")
+                    return False
+            else:
+                print("Deposit contract already exists! You can update it or delete it before creating a new one!")
+                return False
         elif functionality == "withdraw":
-            appr_bytes = self.transactions.compile_program(withdraw_approval())
-            clear_bytes = self.transactions.compile_program(withdraw_clear())
-            note = "Bank {} creates the withdraw functionality".format(self.name)
-            print("\n" + note)
-            l = self.transactions.call_app(
-                self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["create", appr_bytes, clear_bytes, 0, 0]
-            )
-            if l:
-                print("Withdraw contract created successfully with id {} and addr {}".format(l[0], l[1]))
-                self.withdraw = l
+            if self.withdraw == None:
+                appr_bytes = self.transactions.compile_program(withdraw_approval())
+                clear_bytes = self.transactions.compile_program(withdraw_clear())
+                note = "Bank {} creates the withdraw functionality".format(self.name)
+                print("\n" + note)
+                l = self.transactions.call_app(
+                    self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["create", appr_bytes, clear_bytes, 0, 0]
+                )
+                if l:
+                    print("Withdraw contract created successfully with id {} and addr {}".format(l[0], l[1]))
+                    self.withdraw = l
+                    return True
+                else: 
+                    print("Creation of the withdraw contract failed!")
+                    return False
             else: 
-                print("Creation of the withdraw contract failed!")
+                print("Withdraw contract already exists! You can update it or delete it before creating a new one!")
+                return False
         elif functionality == "transfer":
-            appr_bytes = self.transactions.compile_program(transfer_approval())
-            clear_bytes = self.transactions.compile_program(transfer_clear())
-            note = "Bank {} creates the transfer functionality".format(self.name)
-            print("\n" + note)
-            l = self.transactions.call_app(
-                self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["create", appr_bytes, clear_bytes, 0, 0]
-            )
-            if l:
-                print("Transfer contract created successfully with id {} and addr {}".format(l[0], l[1]))
-                self.transfer = l
-            else: 
-                print("Creation of the transfer contract failed!")
+            if self.transfer == None:
+                appr_bytes = self.transactions.compile_program(transfer_approval())
+                clear_bytes = self.transactions.compile_program(transfer_clear())
+                note = "Bank {} creates the transfer functionality".format(self.name)
+                print("\n" + note)
+                l = self.transactions.call_app(
+                    self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["create", appr_bytes, clear_bytes, 0, 0]
+                )
+                if l:
+                    print("Transfer contract created successfully with id {} and addr {}".format(l[0], l[1]))
+                    self.transfer = l
+                    return True
+                else: 
+                    print("Creation of the transfer contract failed!")
+                    return False
+            else:
+                print("Transfer contract already exists! You can update it or delete it before creating a new one!")
+                return False
         elif functionality == "reference":
-            appr_bytes = self.transactions.compile_program(reference_approval())
-            clear_bytes = self.transactions.compile_program(reference_clear())
-            note = "Bank {} creates the bank account reference functionality".format(self.name)
-            print("\n" + note)
-            l = self.transactions.call_app(
-                self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["create", appr_bytes, clear_bytes, 2, 0]
-            )
-            if l:
-                print("Reference contract created successfully with id {} and addr {}".format(l[0], l[1]))
-                self.bank_account_reference = l
-            else: 
-                print("Creation of the reference contract failed!")
+            if self.reference == None:
+                appr_bytes = self.transactions.compile_program(reference_approval())
+                clear_bytes = self.transactions.compile_program(reference_clear())
+                note = "Bank {} creates the bank account reference functionality".format(self.name)
+                print("\n" + note)
+                l = self.transactions.call_app(
+                    self.investor_addr, self.investor_pk, 0, self.bank_id, note, app_args=["create", appr_bytes, clear_bytes, 2, 0]
+                )
+                if l:
+                    print("Reference contract created successfully with id {} and addr {}".format(l[0], l[1]))
+                    self.reference = l
+                    return True
+                else: 
+                    print("Creation of the reference contract failed!")
+                    return False
+            else:
+                print("Reference contract already exists! You can update it or delete it before creating a new one!")
+                return False
         else: 
             print("Possible inputs are only: deposit, withdraw, transfer, reference! Creation failed!")
+            return False
 
-
-    def update(self, functionality):
+    def update(self, functionality, approval, clear):
         if functionality == "deposit":
+            if self.deposit == None:
+                print("Deposit contract is not yet created! Update not possible")
+                return False
             deposit_id = self.deposit[0]
-            appr_bytes = self.transactions.compile_program(deposit_approval())
-            clear_bytes = self.transactions.compile_program(deposit_clear())
+            appr_bytes = self.transactions.compile_program(approval())
+            clear_bytes = self.transactions.compile_program(clear())
             note = "Bank {} updates the deposit functionality".format(self.name)
             print("\n" + note)
             val = self.transactions.call_app(
@@ -142,12 +169,17 @@ class Bank:
             )
             if val:
                 print("Update of deposit was successful!")
+                return True
             else:
                 print("Update of deposit failed!")
+                return False
         elif functionality == "withdraw":
+            if self.withdraw == None:
+                print("Withdraw contract is not yet created! Update not possible")
+                return False
             withdraw_id = self.withdraw[0]
-            appr_bytes = self.transactions.compile_program(withdraw_approval())
-            clear_bytes = self.transactions.compile_program(withdraw_clear())
+            appr_bytes = self.transactions.compile_program(approval())
+            clear_bytes = self.transactions.compile_program(clear())
             note = "Bank {} updates the withdraw functionality".format(self.name)
             print("\n" + note)
             val = self.transactions.call_app(
@@ -155,12 +187,17 @@ class Bank:
             )
             if val:
                 print("Update of withdraw was successful!")
+                return True
             else:
                 print("Update of withdraw failed!")
+                return False
         elif functionality == "transfer":
+            if self.transfer == None:
+                print("Transfer contract is not yet created! Update not possible")
+                return False
             transfer_id = self.transfer[0]
-            appr_bytes = self.transactions.compile_program(transfer_approval())
-            clear_bytes = self.transactions.compile_program(transfer_clear())
+            appr_bytes = self.transactions.compile_program(approval())
+            clear_bytes = self.transactions.compile_program(clear())
             note = "Bank {} updates the transfer functionality".format(self.name)
             print("\n" + note)
             val = self.transactions.call_app(
@@ -168,12 +205,17 @@ class Bank:
             )
             if val:
                 print("Update of transfer was successful!")
+                return True
             else:
                 print("Update of transfer failed!")
+                return False
         elif functionality == "reference":
-            reference_id = self.bank_account_reference[0]
-            appr_bytes = self.transactions.compile_program(reference_approval())
-            clear_bytes = self.transactions.compile_program(reference_clear())
+            if self.reference == None:
+                print("Reference contract is not yet created! Update not possible")
+                return False
+            reference_id = self.reference[0]
+            appr_bytes = self.transactions.compile_program(approval())
+            clear_bytes = self.transactions.compile_program(clear())
             note = "Bank {} updates the bank account reference functionality".format(self.name)
             print("\n" + note)
             val = self.transactions.call_app(
@@ -181,13 +223,19 @@ class Bank:
             )
             if val:
                 print("Update of reference was successful!")
+                return True
             else:
                 print("Update of reference failed!")
+                return False
         else:
             print("Possible inputs are only: deposit, withdraw, transfer, reference! Update failed!")
+            return False
 
     def destroy(self, functionality):
         if functionality == "deposit":
+            if self.deposit == None:
+                print("Deposit contract is not yet created! Deletion not possible")
+                return False
             deposit_id = self.deposit[0]
             note = "Bank {} deletes the deposit functionality".format(self.name)
             print("\n" + note)
@@ -197,9 +245,14 @@ class Bank:
             if val:
                 print("Deposit was successfully deleted!")
                 self.deposit = None
+                return True
             else:
                 print("Deletion of deposit failed!")
+                return False
         elif functionality == "withdraw":
+            if self.withdraw == None:
+                print("Withdraw contract is not yet created! Deletion not possible")
+                return False
             withdraw_id = self.withdraw[0]
             note = "Bank {} deletes the withdraw functionality".format(self.name)
             print("\n" + note)
@@ -209,9 +262,14 @@ class Bank:
             if val:
                 print("Withdraw was successfully deleted!")
                 self.withdraw = None
+                return True
             else:
                 print("Deletion of withdraw failed!")
+                return False
         elif functionality == "transfer":
+            if self.transfer == None:
+                print("Transfer contract is not yet created! Deletion not possible")
+                return False
             transfer_id = self.transfer[0]
             note = "Bank {} deletes the transfer functionality".format(self.name)
             print("\n" + note)
@@ -221,10 +279,15 @@ class Bank:
             if val:
                 print("Transfer was successfully deleted!")
                 self.transfer = None
+                return True
             else:
                 print("Deletion of transfer failed!")
+                return False
         elif functionality == "reference":
-            reference_id = self.bank_account_reference[0]
+            if self.reference == None:
+                print("Reference contract is not yet created! Deletion not possible")
+                return False
+            reference_id = self.reference[0]
             note = "Bank {} deletes the bank account reference functionality".format(self.name)
             print("\n" + note)
             val = self.transactions.call_app(
@@ -232,8 +295,11 @@ class Bank:
             )
             if val:
                 print("Reference was successfully deleted!")
-                self.bank_account_reference = None
+                self.reference = None
+                return True
             else:
                 print("Deletion of reference failed!")
+                return False
         else:
             print("Possible inputs are only: deposit, withdraw, transfer, reference! Deletion failed!")
+            return False
