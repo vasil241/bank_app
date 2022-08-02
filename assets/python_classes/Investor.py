@@ -17,7 +17,7 @@ class Investor(RoleAbstract):
             investor_addr = self.get_account_address()
             investor_pk = self.get_account_pk()
             # transactions.deploy method should return id and addr of newly created bank [id, addr]
-            l = self.transactions.deploy(investor_pk, bank_name, bank_approval, bank_clear, 2, 1, 1, 1)
+            l = self.transactions.deploy(self.get_name(), investor_pk, bank_name, bank_approval, bank_clear, 2, 1, 1, 1)
             self.created_bank = Bank(bank_name, investor_addr, investor_pk, l[0], l[1])
             """
             The created bank has an id and an account address, which requires a min of 0.1 Algo to be on the ledger

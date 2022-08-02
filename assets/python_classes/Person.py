@@ -20,40 +20,40 @@ class Person(PersonAbstract):
 
     def addRole(self, role, role_obj):
         if any(isinstance(x, type(role_obj)) for x in self.roles.values()):
-            print("{} already has the role {}".format(self.name, role))
+            print("\n" + "{} already has the role {}".format(self.name, role))
             return False
         else:
             self.roles[role] = role_obj
-            print("{} now has the role {}".format(self.name, role))
+            print("\n" + "\n" + "{} now has the role {}".format(self.name, role))
             return True
     
     def hasRole(self, role):
         if role in self.roles.keys():
-            print("{} has the role {}".format(self.name, role))
+            print("\n" + "{} has the role {}".format(self.name, role))
             return True
         else:
-            print("{} role was not found".format(role))
+            print("\n" + "{} role was not found".format(role))
             return False
 
     def removeRole(self, role):
         if role in self.roles.keys():
             del self.roles[role]
-            print("The role {} was successfully removed".format(role))
+            print("\n" + "The role {} was successfully removed".format(role))
             return True
         else:
-            print("Removal failed! {} has no such role".format(self.name))
+            print("\n" + "Removal failed! {} has no such role".format(self.name))
             return False
 
     def getRole(self, role):
         if role in self.roles.keys():
             return self.roles[role]
         else:
-            print("{} has no {} role".format(self.name, role))
+            print("\n" + "{} has no {} role".format(self.name, role))
             return None
 
     def getRoles(self):
         if self.roles:
-            print("{} currently has the roles: ".format(self.name) + ", ".join(self.roles.keys()))
+            print("\n" + "{} currently has the roles: ".format(self.name) + ", ".join(self.roles.keys()))
         else:
-            print("{} has no roles".format(self.name))
+            print("\n" + "{} has no roles".format(self.name))
         return self.roles
