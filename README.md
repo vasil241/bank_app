@@ -55,6 +55,14 @@ Run your test from a folder as follows:
 pytest tests/
 ```
 
+### Branch Information
+
+In order to download all branches that you need to use, please use the following commands
+
+```bash 
+git pull --all 
+git fetch --all
+```
 ## UML diagrams 
 
 ![Class diagram of the app](uml_diagrams/ClassDiagram.png)
