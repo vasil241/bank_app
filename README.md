@@ -47,6 +47,14 @@ Now that you have set up the required environment and cloned the project, you ca
 All of the app's logic is in the `assets` folder. There you can find all of the classes in `python_classes` and all of the smart contracts in `contracts`. 
 Go to `demo.py` and read the instructions. Run it and follow closely the messages in the console. After it is done, you can compare all the results and see all of the history of the transactions using [AlgoExplorer](https://testnet.algoexplorer.io/).
 
+## Testing
+
+Run your test from a folder as follows: 
+
+```bash
+pytest tests/
+```
+
 ## UML diagrams 
 
 ![Class diagram of the app](uml_diagrams/ClassDiagram.png)
