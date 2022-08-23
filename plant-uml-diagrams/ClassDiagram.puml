@@ -1,0 +1,80 @@
+@startuml
+'''left to right direction'''
+
+class PersonAbstract {
+    {method} get_name(): str 
+    {method} get_account_address(): str 
+    {method} get_account_pk(): str 
+    {method} addRole(): boolean
+    {method} hasRole(): boolean 
+    {method} removeRole(role): boolean 
+    {method} getRole(role): RoleAbstract
+}
+
+class Person {
+    {field} name: str 
+    {field} algorand_account: list
+    {field} roles: dict
+    {method} getRoles(): dict
+}
+
+class RoleAbstract {
+    {field} person: Person 
+}
+
+class Client {
+    {field} person: Person 
+    {field} bank: Bank 
+    {field} bank_account: list 
+    {method} get_bank_account_id(): str 
+    {method} get_bank_account_addr(): str 
+    {method} get_bank(): Bank 
+    {method} leave_bank(): boolean 
+    {method} open_bank_account(bank, initial_deposit): boolean
+    {method} deposit(amount): boolean 
+    {method} withdraw(amount): boolean 
+    {method} transfer(receiver, amount) : boolean
+} 
+
+class Investor {
+    {field} person: Person 
+    {field} created_bank: Bank 
+    {field} transactions: Transactions 
+
+    {method} get_bank(): Bank 
+    {method} create_bank(bank_name): boolean 
+    {method} fund_bank(amount): boolean 
+    {method} update_bank(bank_approval, bank_clear): boolean 
+    {method} delete_bank(): boolean  
+
+}
+
+
+class Bank {
+    -{field} name: str
+    -{field} transactions: Transactions 
+    -{field} investor_addr: str 
+    -{field} ivnestor_pk: str 
+    -{field} bank_id: int 
+    -{field} bank_addr: str 
+    +{method} get_name(): str 
+    +{method} get_bank_id(): int 
+    + {method} get_bank_addr(): str 
+}
+
+class Transactions {
+    -{field}: AlgodClient 
+    +{method}: deploy(investor_name, creator_pk_app, app_name, approval, clear, global_ints, global_bytes, local_ints, local_bytes): int
+} 
+
+
+Person --> PersonAbstract 
+RoleAbstract --> PersonAbstract 
+RoleAbstract --> Person 
+RoleAbstract --* Person
+Client --|> RoleAbstract
+Investor --|> RoleAbstract
+Client -- Bank 
+Bank *-- Investor 
+Transactions "1" --* Investor: transactions
+@enduml
